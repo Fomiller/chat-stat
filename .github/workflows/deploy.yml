@@ -2,17 +2,10 @@
 
 name: 'Terragrunt Deploy'
   
+# Manual only. This repo isn't deployed anymore and its AWS infra is being torn
+# down (FOM-132), so a push must not apply terraform.
 on:
-  push:
-    paths:
-      - '.github/**'
-      - 'modules/**'
-      - 'infra/**'
-      - 'src/**'
-      - 'justfile'
-      - 'dockerfile*'
-      - 'go.mod'
-      - 'go.sum'
+  workflow_dispatch:
    
 jobs:
   Pre-check:
@@ -90,6 +83,9 @@ jobs:
       - Build-lambda-twitch-event-sub-webhook
       - Build-lambda-twitch-record-manager
       - Build-lambda-timestream-query
+    permissions:
+      id-token: write
+      contents: read
     uses: fomiller/gh-actions/.github/workflows/terragrunt.yaml@main
     with:
       environment: ${{ contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref) && 'prod' || 'dev' }}
@@ -97,16 +93,22 @@ jobs:
       doppler-project: chat-stat
       download-artifacts: true
       artifacts_dir: infra/modules/aws/lambda/bin
+      use-oidc: true
     secrets: inherit
         
   Build-chat-stat-logger-image:
     name: 'Build/Deploy ECR chat-stat-logger image'
     needs: Deploy-infra
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
     uses: fomiller/gh-actions/.github/workflows/ecr.yaml@main
     with:
       environment: ${{ contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref) && 'prod' || 'dev' }}
       repo: logger
       repo-prefix: "fomiller-chat-stat"
+      use-oidc: true
       src-filters: |
         docker:
           - 'dockerfile'
@@ -117,11 +119,16 @@ jobs:
   Build-chat-stat-api-image:
     name: 'Build/Deploy ECR chat-stat-api image'
     needs: Deploy-infra
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
     uses: fomiller/gh-actions/.github/workflows/ecr.yaml@main
     with:
       environment: ${{ contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref) && 'prod' || 'dev' }}
       repo: api
       repo-prefix: "fomiller-chat-stat"
+      use-oidc: true
       dockerfile: dockerfile.api
       platforms: '["linux/amd64"]'
       src-filters: |
@@ -133,11 +140,16 @@ jobs:
   Build-chat-stat-frontend-image:
     name: 'Build/Deploy ECR chat-stat-frontend image'
     needs: Deploy-infra
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
     uses: fomiller/gh-actions/.github/workflows/ecr.yaml@main
     with:
       environment: ${{ contains(fromJSON('["refs/heads/main", "refs/heads/master"]'), github.ref) && 'prod' || 'dev' }}
       repo: frontend
       repo-prefix: "fomiller-chat-stat"
+      use-oidc: true
       dockerfile: dockerfile.frontend
       platforms: '["linux/amd64"]'
       src-filters: |
