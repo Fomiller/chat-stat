@@ -2,17 +2,10 @@
 
 name: 'Terragrunt Deploy'
   
+# Manual only. This repo isn't deployed anymore and its AWS infra is being torn
+# down (FOM-132), so a push must not apply terraform.
 on:
-  push:
-    paths:
-      - '.github/**'
-      - 'modules/**'
-      - 'infra/**'
-      - 'src/**'
-      - 'justfile'
-      - 'dockerfile*'
-      - 'go.mod'
-      - 'go.sum'
+  workflow_dispatch:
    
 jobs:
   Pre-check:
